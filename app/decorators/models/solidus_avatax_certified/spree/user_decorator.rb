@@ -8,6 +8,7 @@ module SolidusAvataxCertified
       end
 
       ::Spree::User.prepend self
+      ::Spree::LegacyUser.prepend self
     end
   end
 end
