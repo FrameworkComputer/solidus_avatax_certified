@@ -5,6 +5,8 @@ require 'spec_helper'
 RSpec.describe Spree::Admin::AvalaraEntityUseCodesController do
   let(:avalara_entity_use_code) { FactoryBot.create(:avalara_entity_use_code) }
 
+  render_views
+
   stub_authorization!
 
   before do
@@ -14,7 +16,15 @@ RSpec.describe Spree::Admin::AvalaraEntityUseCodesController do
   describe '#index' do
     subject { get :index }
 
+    before { avalara_entity_use_code }
+
     it { is_expected.to be_successful }
+
+    it 'renders the use code row with its edit link' do
+      subject
+
+      expect(response.body).to include("/admin/avalara_entity_use_codes/#{avalara_entity_use_code.id}/edit")
+    end
   end
 
   describe '#new' do
