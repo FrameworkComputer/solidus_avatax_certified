@@ -7,7 +7,7 @@ FactoryBot.define do
     ship_address
     completed_at { nil }
     email { user.email }
-    store
+    association :store, strategy: :create
     state { 'delivery' }
 
     transient do

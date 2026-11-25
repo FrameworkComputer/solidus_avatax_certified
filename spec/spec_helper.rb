@@ -6,7 +6,7 @@ require 'solidus_dev_support/rspec/coverage'
 
 # Create the dummy app if it's still missing.
 dummy_env = "#{__dir__}/dummy/config/environment.rb"
-system 'bin/rake extension:test_app' unless File.exist? dummy_env
+system 'bundle exec rake extension:test_app' unless File.exist? dummy_env
 require dummy_env
 
 require 'solidus_dev_support/rspec/feature_helper'
@@ -22,5 +22,6 @@ RSpec.configure do |config|
 
   config.example_status_persistence_file_path = "./spec/examples.txt"
 
+  config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Spree::TestingSupport::ControllerRequests, type: :controller
 end

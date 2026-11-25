@@ -2,6 +2,8 @@
 
 module Spree
   class Calculator::AvalaraTransaction < Calculator::DefaultTax
+    LOOKUP_FAILED = 'Avalara lookup failed'
+
     def self.description
       "Avalara Transaction Calculator"
     end
@@ -53,12 +55,24 @@ module Spree
     end
 
     def get_avalara_response(order)
-      Rails.cache.fetch(cache_key(order), time_to_idle: 5.minutes) do
-        if order.can_commit?
-          order.avalara_capture_finalize
-        else
-          order.avalara_capture
-        end
+      key = cache_key(order)
+      cached = Rails.cache.read(key)
+      return cached unless cached.nil?
+
+      if order.can_commit? && Spree::Avatax::Config.document_commit
+        cache_response(key, order.avalara_capture_finalize)
+      else
+        cache_response(key, order.avalara_capture, expires_in: 5.minutes)
+      end
+    end
+
+    def cache_response(key, response, **options)
+      if response
+        Rails.cache.write(key, response, **options)
+        response
+      else
+        Rails.cache.write(key, LOOKUP_FAILED, expires_in: 1.minute)
+        LOOKUP_FAILED
       end
     end
 
@@ -82,14 +96,13 @@ module Spree
     def cache_key(order)
       long_key   = long_cache_key(order)
       short_key  = Digest::SHA1.hexdigest(long_key)
-      "avtx_#{short_key}"
+      "avtx_v2_#{short_key}"
     end
 
     def tax_for_item(item, avalara_response)
-      prev_tax_amount = prev_tax_amount(item)
-
-      return prev_tax_amount if avalara_response.nil?
+      return prev_tax_amount(item) unless avalara_response.is_a?(Hash)
       return 0 if avalara_response['totalTax'] == 0.0
+      return 0 if avalara_response['lines'].nil?
 
       avalara_response['lines'].each do |line|
         if line['lineNumber'] == "#{item.id}-#{item.avatax_line_code}"
