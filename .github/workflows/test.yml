@@ -1,0 +1,21 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  rspec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: solidusio/test-solidus-extension@435ede6aecf3adbe1cc5093a57f1d91c022c8b62 # main, 2026-09-17
+        with:
+          database: sqlite
+          rails-version: "8.1"
+          ruby-version: "4.0"
+          solidus-branch: v4.8
